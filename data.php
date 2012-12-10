@@ -22,51 +22,71 @@ class Data extends CI_Controller
         
         // DB table to use
         $sTable = 'data_table';
-        
+        //
+    
+        $iDisplayStart = $this->input->get_post('iDisplayStart', true);
+        $iDisplayLength = $this->input->get_post('iDisplayLength', true);
+        $iSortCol_0 = $this->input->get_post('iSortCol_0', true);
+        $iSortingCols = $this->input->get_post('iSortingCols', true);
+        $sSearch = $this->input->get_post('sSearch', true);
+        $sEcho = $this->input->get_post('sEcho', true);
+    
         // Paging
-        if(isset($_GET['iDisplayStart']) && $_GET['iDisplayLength'] != '-1')
+        if(isset($iDisplayStart) && $iDisplayLength != '-1')
         {
-            $this->db->limit($this->db->escape_str($_GET['iDisplayLength']), $this->db->escape_str($_GET['iDisplayStart']));
+            $this->db->limit($this->db->escape_str($iDisplayLength), $this->db->escape_str($iDisplayStart));
         }
         
         // Ordering
-        if(isset($_GET['iSortCol_0']))
+        if(isset($iSortCol_0))
         {
-            for($i=0; $i<intval($_GET['iSortingCols']); $i++)
+            for($i=0; $i<intval($iSortingCols); $i++)
             {
-                if($_GET['bSortable_'.intval($_GET['iSortCol_'.$i])] == 'true')
+                $iSortCol = $this->input->get_post('iSortCol_'.$i, true);
+                $bSortable = $this->input->get_post('bSortable_'.intval($iSortCol), true);
+                $sSortDir = $this->input->get_post('sSortDir_'.$i, true);
+    
+                if($bSortable == 'true')
                 {
-                    $this->db->order_by($aColumns[intval($this->db->escape_str($_GET['iSortCol_'.$i]))], $this->db->escape_str($_GET['sSortDir_'.$i]));
+                    $this->db->order_by($aColumns[intval($this->db->escape_str($iSortCol))], $this->db->escape_str($sSortDir));
                 }
             }
         }
         
-        // Individual column filtering
-        if(isset($_GET['sSearch']) && !empty($_GET['sSearch']))
+        /* 
+         * Filtering
+         * NOTE this does not match the built-in DataTables filtering which does it
+         * word by word on any field. It's possible to do here, but concerned about efficiency
+         * on very large tables, and MySQL's regex functionality is very limited
+         */
+        if(isset($sSearch) && !empty($sSearch))
         {
             for($i=0; $i<count($aColumns); $i++)
             {
-                if(isset($_GET['bSearchable_'.$i]) && $_GET['bSearchable_'.$i] == 'true')
+                $bSearchable = $this->input->get_post('bSearchable_'.$i, true);
+                
+                // Individual column filtering
+                if(isset($bSearchable) && $bSearchable == 'true')
                 {
-                    $this->db->or_like($aColumns[$i], $this->db->escape_like_str($_GET['sSearch']));
+                    $this->db->or_like($aColumns[$i], $this->db->escape_like_str($sSearch));
                 }
             }
         }
         
-        // Select data
+        // select data
         $this->db->select('SQL_CALC_FOUND_ROWS '.str_replace(' , ', ' ', implode(', ', $aColumns)), false);
         $rResult = $this->db->get($sTable);
-
+    
         // Data set length after filtering
         $this->db->select('FOUND_ROWS() AS found_rows');
         $iFilteredTotal = $this->db->get()->row()->found_rows;
-
+    
         // Total data set length
         $iTotal = $this->db->count_all($sTable);
-
-        // Output
+    
+        // output
         $output = array(
-            'sEcho' => intval($_GET['sEcho']),
+            'sEcho' => intval($sEcho),
             'iTotalRecords' => $iTotal,
             'iTotalDisplayRecords' => $iFilteredTotal,
             'aaData' => array()
@@ -80,10 +100,10 @@ class Data extends CI_Controller
             {
                 $row[] = $aRow[$col];
             }
-
+    
             $output['aaData'][] = $row;
         }
-
+    
         echo json_encode($output);
     }
 }
