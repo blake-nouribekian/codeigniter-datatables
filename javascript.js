@@ -9,7 +9,7 @@ $(document).ready(function()
 	        "iDisplayLength": 10,
 	        "aLengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
 	        "aaSorting": [[0, 'asc']],
-	        "aoColumns": [
+	        "aColumns": [
 			{ "bVisible": true, "bSearchable": true, "bSortable": true },
 			{ "bVisible": true, "bSearchable": true, "bSortable": true },
 			{ "bVisible": true, "bSearchable": true, "bSortable": true }
